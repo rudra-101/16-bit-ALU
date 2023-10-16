@@ -13,52 +13,38 @@ output cout;
 output carry_out;
 output m;
 input [1:0]sel;
-input [15:0]a;
-input [15:0]b;
-input[15:0]x;
-input[15:0]y;
-input [15:0]A;
-input [15:0]B;
-input [15:0]j;
-input [15:0]k;
+input [15:0]a,b,x,y,A,B,j,k;
 input cin;
 input Op;
 
-wire [15:0]s;
-
-wire [15:0]sum;
-
-wire [15:0]buff1;
-wire [15:0]buff2;
-
-wire [15:0]rightshift;
-wire [15:0]leftshift;
+wire [15:0]s,sum,rightshift,leftshift;
+wire [31:0]P;
 
 ///////////////////////////////////////////
 
 CLAdder c1(s,cout,a,b,cin);
 subtractor sub1(sum,carry_out,m,x,y,Op);
-multiplier m1(buff1,buff2,A,B);
+multiplier m1(A,B,P);
 shifter shift1(leftshift,rightshift,j,k);
-
+ 
 
 always@*
     begin
         if(sel==2'b00)
         begin
              y1[15:0] = s[15:0];
-             y2[31:0] = 31'bz;
+             y2[31:0] = 32'bz;
              y3[15:0] = 16'bz; 
         end
         else if(sel==2'b01)
         begin
              y1[15:0] = sum[15:0];
-             y2 [15:0] = 16'bz;
+             y2 [31:0] = 32'bz;
              y3[15:0] = 16'bz;  
         end
         else if(sel==2'b10)
         begin
-             y2[31:0] = {buff1[15:0],buff2[15:0]};   
+             y2[31:0] = P;   
              y1[15:0] = 16'bz;
              y3[15:0] = 16'bz;
         end
@@ -66,7 +52,7 @@ always@*
         begin   
              y3[15:0] = leftshift[15:0];
              y1[15:0] = rightshift[15:0];
-             y2 [15:0] = 16'bz;
+             y2 [31:0] = 32'bz;
         end
     end
 endmodule
@@ -77,10 +63,9 @@ output [15:0]s;
 output cout;
 input cin;
 
-input [15:0]a;
-input [15:0]b; 
+input [15:0]a,b;
 
-wire cout1;                                              //Final Carry out of 8 bit CLA
+wire cout1,cout2,cout3;                                 //Final Carry out of 16 bit CLA
 cladder4 cla1(s[3:0],cout1,a[3:0],b[3:0],cin);          //cladder4 function is called
 cladder4 cla2(s[7:4],cout2,a[7:4],b[7:4],cout1);        //cladder4 function is called     
 cladder4 cla3(s[11:8],cout3,a[11:8],b[11:8],cout2);        //cladder4 function is called
@@ -88,6 +73,8 @@ cladder4 cla4(s[15:12],cout,a[15:12],b[15:12],cout3);        //cladder4 function
 endmodule
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 module cladder4(output [3:0]s, c3, input [3:0]a, [3:0]b, cin);
+
+wire c0,p0,g0,c1,p1,g1,c2,p2,g2,p3,g3;
 
 PFAdder pfa1(s[0],p0,g0,a[0],b[0],cin);               //Partial adder function is called
 cla_logic clogic1(c0,p0,g0,cin);                  //Propagate and generate Carry function is called
@@ -123,10 +110,8 @@ endmodule
 ///////////////////// SUBTRACTOR ///////////////////////
 module subtractor(sum, carry_out, m, x, y, Op);
    output [15:0] sum;  
-   output      carry_out; 
-   output      m;  
-   input [15:0]        x;  
-   input [15:0]        y;  
+   output      carry_out,m; 
+   input [15:0]        x, y;   
    input       Op; 
   
    wire C0,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10,C11,C12,C13,C14,C15;
@@ -171,75 +156,55 @@ endmodule
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 module fulladder(S, Cout, A, B, Cin);
-   output S;
-   output Cout;
-   input  A;
-   input  B;
-   input  Cin;
-     wire   w1,w2,w3,w4;
-     xor(w1, A, B);
-   xor(S, Cin, w1);
-   and(w2, A, B);  
-   and(w3, A, Cin);
-   and(w4, B, Cin);  
-   or(Cout, w2, w3, w4);
+   output S,Cout;
+   input  A,B,Cin;
+     wire   w1,w2,w3;
+   xor(S, Cin, A,B);
+   xor(w1, A, B);  
+   and(w2, w1, Cin);
+   and(w3, A, B);  
+   or(Cout, w2, w3);
 endmodule
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /////////////// MULTIPLIER ////////////////////////
 
-module multiplier(buff1,buff2,A,B);
+module multiplier (A,B,P);
+  input [15:0]A,B;
+  output [31:0] P;
+  reg [31:0] product;
+  reg [15:0] B_reg;
+  reg [4:0] counter;
 
-output [15:0]buff1;
-output [15:0]buff2;
-input [15:0]A;
-input [15:0]B;
+  always @(A or B) begin
+    product <= 0;
+    B_reg <= B;
+    counter <= 0;
+  end
 
-reg [15:0]buff1;
-reg [15:0]buff2;
-wire [15:0]A;
-wire [15:0]B;
+  always @(*) 
+   begin
+      if (counter < 16) begin
+        if (B_reg[0] == 1'b1)
+          product <= product + (A << counter);
+        B_reg <= B_reg >> 1;
+        counter <= counter + 1;
+      end
+    end
 
-reg B0;
-reg [15:0]C;
+  assign P = product;
 
-integer i;
-
-always@*
-begin
-buff1 = 0;
-C[15:0] = B[15:0];
-    for(i=0;i<16;i=i+1)
-    begin
-        B0 = C[0];
-        if(B0==1)
-            begin
-            buff1[15:0] = buff1 [15:0]+ A[15:0];
-            C = C >> 1;
-            C[15] = buff1[0];
-            buff1 = buff1 >> 1;
-            end
-        else if(B0==0)
-            begin
-            C = C >> 1;
-            C[15] = buff1[0];
-            buff1 = buff1 >> 1;
-            end
-        buff2 = C[15:0];    
-    end       
-end
 endmodule
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////// SHIFTER /////////////////
 module shifter(
-    output reg [15:0] leftshift,
-    output reg [15:0] rightshift,
-    input [15:0] j,
-    input [15:0] k);
+    output reg [15:0] leftshift,rightshift,
+    input [15:0] j,k);
 always@(k)
 begin
-leftshift = j<<k;
+leftshift <= j<<k;
 rightshift <= j>>k;
 end
 
