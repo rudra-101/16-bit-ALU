@@ -114,23 +114,19 @@ module subtractor (sum, carry_out, x, y, Op);
   output carry_out;
   
   wire [15:0] B_inverted;
-  wire [15:0] Difference;
   wire [15:0] C;
 
   // Invert B based on Op
   assign B_inverted = (Op) ? ~y : y;
 
   // Full Adder 0
-  fulladder FA0 (.A(x[0]), .B(B_inverted[0]), .Cin(Op), .S(Difference[0]), .Cout(C[0]));
-  assign sum[0] = Difference[0];
-
+   fulladder FA0 (sum[0],C[0],x[0],B_inverted[0],Op);
    genvar i;
    generate
-   for(i=1;i<16;i=i+1)
-   begin:GEN_FULL_ADDER
-   fulladder FAi (.A(x[i]), .B(B_inverted[i]), .Cin(C[i - 1]), .S(Difference[i]), .Cout(C[i]));
-   assign sum[i] = Difference[i];
-   end
+       for(i=1;i<16;i=i+1)
+           begin
+               fulladder FAi(sum[i],C[i],x[i],B_inverted[i],C[i-1]);
+           end
    endgenerate
 
 endmodule
