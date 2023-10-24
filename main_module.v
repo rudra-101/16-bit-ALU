@@ -149,13 +149,12 @@ endmodule
 
 module multiplier (A,B,P);
   input [15:0]A,B;
-  output [31:0] P;
-  reg [31:0] product;
+  output reg [31:0] P;
   reg [15:0] B_reg;
   reg [4:0] counter;
 
   always @(A or B) begin
-    product <= 0;
+    P <= 0;
     B_reg <= B;
     counter <= 0;
   end
@@ -164,13 +163,11 @@ module multiplier (A,B,P);
    begin
       if (counter < 16) begin
         if (B_reg[0] == 1'b1)
-          product <= product + (A << counter);
+          P <= P + (A << counter);
         B_reg <= B_reg >> 1;
         counter <= counter + 1;
       end
     end
-
-  assign P = product;
 
 endmodule
 
