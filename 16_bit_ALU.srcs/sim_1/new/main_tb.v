@@ -1,22 +1,5 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 03.10.2023 17:42:01
-// Design Name: 
-// Module Name: main_tb
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
+
 //////////////////////////////////////////////////////////////////////////////////
 
 
@@ -38,9 +21,8 @@ wire [31:0]y2;
 wire [15:0]y3;
 wire cout;
 wire carry_out;
-wire m;
 
-main_module uut(y1,y2,y3,cout,carry_out,m,sel,a,b,x,y,A,B,j,k,cin,Op);
+main_module uut(y1,y2,y3,cout,carry_out,sel,a,b,x,y,A,B,j,k,cin,Op);
 initial begin
 sel = 2'b00;
 a = 10;
@@ -73,7 +55,7 @@ a = 10;
 b = 20;
 x = 25;
 y = 11;
-A = 12;
+A = 11;
 B = 12;
 j = 16'hff12;
 k = 3;
